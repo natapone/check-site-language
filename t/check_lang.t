@@ -7,6 +7,40 @@ BEGIN { use_ok('check::site::language') };
 
 my $chk_lang = check::site::language->new();
 
+subtest 'Extract data' => sub {
+    my @links = (
+        'dek-d.com',
+        'alibaba.com'
+    );
+    
+    my $link_rank = {};
+    
+    my $link_rank = $chk_lang->extract_link_rank(\@links, 2, "TH", $link_rank);
+    my $expected_result = {
+        'dek-d.com' => {
+            'TH' => 26,
+        },
+        'alibaba.com' => {
+            'TH' => 27,
+        },
+    };
+    is_deeply($link_rank, $expected_result, "Ranks are correct");
+    
+    $link_rank = $chk_lang->extract_link_rank(\@links, 1, "ID", $link_rank);
+    $expected_result = {
+        'dek-d.com' => {
+            'TH' => 26,
+            'ID' => 1,
+        },
+        'alibaba.com' => {
+            'TH' => 27,
+            'ID' => 2,
+        },
+    };
+    is_deeply($link_rank, $expected_result, "Ranks are correct");
+    
+};
+exit;
 subtest 'Alexa' => sub {
     my $expected_url = 'http://www.alexa.com/topsites/countries/TH';
     is($chk_lang->_get_alexa_url(1,'TH'), $expected_url, "Url is correct");
