@@ -13,20 +13,12 @@ sub get {
     my $result = {
         location => $url,
     };
-    
-    # check if url is local (for testing)
-    # if ($self->_is_abs($url)) {
-    #     print("UA get url: ".$url);
         
         do {
             $result = $self->_get_url($url);
             $url = $result->{'location'} if $result->{'status'} == -1;
             
         } until ($result->{'status'} == 1 or $result->{'status'} == 0 ); 
-    # } else {
-    #     print("UA get local: ".$url);
-    #     $result = $self->_get_local($url);
-    # }
     
     return $result;
 }
