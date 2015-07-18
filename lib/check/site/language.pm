@@ -10,6 +10,12 @@ has 'alexa_service_url' => (
     lazy => 1,
 );
 
+has 'alexa_rank_per_page' => (
+    is => 'ro', 
+    isa => 'Int', 
+    default => 25,
+    lazy => 1,
+);
 
 # sub check () {
 #     
@@ -19,6 +25,15 @@ has 'alexa_service_url' => (
 #     
 #     
 # }
+
+sub get_rank_link {
+    my ( $self, $html ) = @_;
+    
+    # <a href="/siteinfo/dek-d.com">Dek-d.com</a>
+    
+    my @links = $html =~ m{(?:href)="\/siteinfo\/(.*?)"}g;
+    return \@links;
+}
 
 sub _get_alexa_url {
     my ( $self, $page, $country_code ) = @_;
