@@ -50,6 +50,7 @@ sub save_top_sites_by_country () {
     
     print Dumper($link_rank);
     store $link_rank, $file_name;
+    print "Save to: $file_name \n";
     return $link_rank
 }
 
