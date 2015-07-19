@@ -24,9 +24,10 @@ has 'alexa_rank_per_page' => (
 has 'ua' => (is => 'ro', isa => 'check::site::agent', lazy => 1, builder => '_build_ua');
 
 sub save_top_sites_detail {
-    my ( $self, $link_rank, $file_name ) = @_;
+    my ( $self, $link_rank, $pre_data, $start_idx, $file_name ) = @_;
     
-    my $top_sites_detail = {};
+    my $top_sites_detail = $pre_data || {};
+    $start_idx = $start_idx || 1;
     $file_name = $file_name || 'top_sites_detail.hash';
     my $site_count = scalar keys $link_rank;
     
@@ -34,13 +35,16 @@ sub save_top_sites_detail {
     foreach my $link (sort keys %$link_rank) {
         # print  $link, "----" ,Dumper($link_rank->{$link}), "\n"; next;
         
+        $i++;
+        # skip if less than start index
+        next unless $i >= $start_idx;
+        
         $top_sites_detail->{$link} = $link_rank->{$link};
         
         my $url = $self->_link_name_to_url($link);
         my $result = $self->ua->get($url);
-        $i++
-        print "$i / $site_count Read: $url = ", $result->{status}, "\n"; 
         
+        print "$i / $site_count Read: $url = ", $result->{status}, "\n"; 
         if (!$result->{status}) {
             $top_sites_detail->{$link}->{error} = 1;
             next;
@@ -53,11 +57,14 @@ sub save_top_sites_detail {
             $top_sites_detail->{$link}->{$_} = $details->{$_};
         }
         
-        last if ($i > 10);
+        # save to file
+        store $top_sites_detail, $file_name;
+        
+        # last if ($i > 30);
     }
     
-    print Dumper($top_sites_detail);
-    store $top_sites_detail, $file_name;
+    # print Dumper($top_sites_detail);
+    # store $top_sites_detail, $file_name;
     print "Save to: $file_name \n";
     return $top_sites_detail;
 }
