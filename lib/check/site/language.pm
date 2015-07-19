@@ -3,6 +3,7 @@ package check::site::language;
 use Moose;
 use check::site::agent;
 use Storable;
+use HTML::HeadParser;
 
 use Data::Dumper;
 
@@ -22,7 +23,71 @@ has 'alexa_rank_per_page' => (
 
 has 'ua' => (is => 'ro', isa => 'check::site::agent', lazy => 1, builder => '_build_ua');
 
-sub save_top_sites_by_country () {
+sub save_top_sites_detail {
+    my ( $self, $link_rank, $file_name ) = @_;
+    
+    my $top_sites_detail = {};
+    $file_name = $file_name || 'top_sites_detail.hash';
+    my $site_count = scalar keys $link_rank;
+    
+    my $i=0;
+    foreach my $link (sort keys %$link_rank) {
+        # print  $link, "----" ,Dumper($link_rank->{$link}), "\n"; next;
+        
+        $top_sites_detail->{$link} = $link_rank->{$link};
+        
+        my $url = $self->_link_name_to_url($link);
+        my $result = $self->ua->get($url);
+        $i++
+        print "$i / $site_count Read: $url = ", $result->{status}, "\n"; 
+        
+        if (!$result->{status}) {
+            $top_sites_detail->{$link}->{error} = 1;
+            next;
+        }
+        
+        # extract detail
+        my $details = $self->extract_page_detail($result->{content});
+        
+        foreach (keys %$details) {
+            $top_sites_detail->{$link}->{$_} = $details->{$_};
+        }
+        
+        last if ($i > 10);
+    }
+    
+    print Dumper($top_sites_detail);
+    store $top_sites_detail, $file_name;
+    print "Save to: $file_name \n";
+    return $top_sites_detail;
+}
+
+sub extract_page_detail {
+    my ( $self, $html ) = @_;
+    
+    my $p = HTML::HeadParser->new;
+    $p->parse($html);
+    
+    if ($p) {
+        return {
+            title => $p->header('Title') || '',
+            keywords => $p->header('X-Meta-Keywords') || '',
+            description => $p->header('X-Meta-Description') || '',
+        };
+    } else {
+        return {};
+    }
+
+}
+
+sub _link_name_to_url {
+    my ( $self, $link ) = @_;
+    
+    $link = "www." . $link unless ( $link =~ /^www\./ );
+    return $link
+}
+
+sub save_top_sites_by_country {
     my ( $self, $country_codes, $max_page, $file_name ) = @_;
     
     $max_page = $max_page || 3;
@@ -51,7 +116,7 @@ sub save_top_sites_by_country () {
     print Dumper($link_rank);
     store $link_rank, $file_name;
     print "Save to: $file_name \n";
-    return $link_rank
+    return $link_rank;
 }
 
 sub extract_link_rank {
@@ -60,7 +125,7 @@ sub extract_link_rank {
     my $i = 1;
     foreach my $link (@$links) {
         # print "    ---- $link  \n";
-        $link_rank->{$link}->{$country_code} = ($page-1) * $self->alexa_rank_per_page + $i;
+        $link_rank->{$link}->{'country'}->{$country_code} = ($page-1) * $self->alexa_rank_per_page + $i;
         $i++;
     }
     
