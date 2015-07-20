@@ -8,6 +8,13 @@ use Lingua::Identify qw(:language_identification);
 
 use Data::Dumper;
 
+has country_codes => (
+    is => 'ro', 
+    isa => 'ArrayRef', 
+    builder => '_build_country_codes',
+    lazy => 1,
+);
+
 has 'alexa_service_url' => (
     is => 'ro', 
     isa => 'Str', 
@@ -24,19 +31,31 @@ has 'alexa_rank_per_page' => (
 
 has 'ua' => (is => 'ro', isa => 'check::site::agent', lazy => 1, builder => '_build_ua');
 
+sub _build_country_codes {
+    
+    return [
+        'TH', # Thailand
+        'ID', # Indonesia
+        'PH', # Philippines
+        'SG', # Singapore
+        'VN', # Vietnam
+    ];
+    
+}
+
 sub export_sites_detail {
     my ( $self, $top_sites_detail, $file_name ) = @_;
     
     $file_name = $file_name || 'top_sites_detail.csv';
     my $site_count = scalar keys $top_sites_detail;
     
-    my @country_codes = (
-        'TH', # Thailand
-        'ID', # Indonesia
-        'PH', # Philippines
-        'SG', # Singapore
-        'VN', # Vietnam
-    );
+    # my @country_codes = (
+    #     'TH', # Thailand
+    #     'ID', # Indonesia
+    #     'PH', # Philippines
+    #     'SG', # Singapore
+    #     'VN', # Vietnam
+    # );
     
     my @headers = (
         "site",
@@ -47,7 +66,9 @@ sub export_sites_detail {
         "error",
     );
     
-    my @headers = (@headers, @country_codes);
+    $top_sites_detail = $self->site_detail_cleanup($top_sites_detail);
+    
+    @headers = (@headers, @{$self->country_codes});
     my $export_string = join(',', @headers) . "\n";
     
     my $i=0;
@@ -82,7 +103,7 @@ sub export_sites_detail {
         }
         
         # country
-        foreach (@country_codes) {
+        foreach (@{$self->country_codes}) {
             # print "   == $_ \n";
             push(@strings, $site->{country}->{$_} || '');
         }
@@ -248,5 +269,7 @@ sub _build_ua {
     
     return check::site::agent->new();
 }
+
+
 
 1;
