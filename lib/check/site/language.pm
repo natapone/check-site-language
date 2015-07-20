@@ -270,6 +270,26 @@ sub _build_ua {
     return check::site::agent->new();
 }
 
+sub _cleanup_lang {
+    my ($self, $data) = @_;
+    
+    foreach my $link (keys %$data) {
+        # get suffix
+        my ($suffix) = $link =~ /\.([^.]\w+)$/;
+
+        
+        print "--- $link ==> $suffix \n";
+        
+        # $string =~ m/(interesting)/g;
+        
+        my @lang_match = grep(/^$suffix$/i, @{$self->country_codes});
+        $data->{$link}->{language} = $suffix if (scalar @lang_match > 0);
+        
+        
+    }
+    
+    return $data;
+}
 
 
 1;
