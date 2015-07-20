@@ -4,6 +4,7 @@ use Moose;
 use check::site::agent;
 use Storable;
 use HTML::HeadParser;
+use Lingua::Identify qw(:language_identification);
 
 use Data::Dumper;
 
@@ -22,6 +23,85 @@ has 'alexa_rank_per_page' => (
 );
 
 has 'ua' => (is => 'ro', isa => 'check::site::agent', lazy => 1, builder => '_build_ua');
+
+sub export_sites_detail {
+    my ( $self, $top_sites_detail, $file_name ) = @_;
+    
+    $file_name = $file_name || 'top_sites_detail.csv';
+    my $site_count = scalar keys $top_sites_detail;
+    
+    my @country_codes = (
+        'TH', # Thailand
+        'ID', # Indonesia
+        'PH', # Philippines
+        'SG', # Singapore
+        'VN', # Vietnam
+    );
+    
+    my @headers = (
+        "site",
+        "title",
+        "keywords",
+        "description",
+        "language",
+        "error",
+    );
+    
+    my @headers = (@headers, @country_codes);
+    my $export_string = join(',', @headers) . "\n";
+    
+    my $i=0;
+    foreach my $link (sort keys $top_sites_detail) {
+        $i++;
+        print "Export $i / $site_count : $link \n";
+        
+        my $site = $top_sites_detail->{$link};
+        # print Dumper($site);
+        
+        my @strings;
+        push(@strings, $link);
+        
+        # detail
+        push(@strings, $site->{title} || '');
+        push(@strings, $site->{keywords} || '');
+        push(@strings, $site->{description} || '');
+        
+        # language
+        my $lang;
+        if ( defined($site->{keywords}) || defined($site->{description}) ) {
+            $lang = langof($site->{keywords} . " " . $site->{description});
+            # print "----- ", Dumper($lang), "\n";
+        }
+        push(@strings, $lang || '');
+        
+        # error
+        if ( $site->{error} ) {
+            push(@strings, 1);
+        } else {
+            push(@strings, 0);
+        }
+        
+        # country
+        foreach (@country_codes) {
+            # print "   == $_ \n";
+            push(@strings, $site->{country}->{$_} || '');
+        }
+        
+        # print Dumper(\@strings);
+        
+        my $text = join ',', map { qq/"$_"/ } @strings;
+        $export_string .= $text . "\n";
+        
+        # exit;
+        # last if ( $site->{error} );
+    }
+    
+    # write to file
+    open(my $fh, '>', $file_name);
+    print $fh $export_string;
+    close $fh;
+    print "Write to: $file_name \n";
+};
 
 sub save_top_sites_detail {
     my ( $self, $link_rank, $pre_data, $start_idx, $file_name ) = @_;
