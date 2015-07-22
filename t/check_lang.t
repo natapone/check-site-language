@@ -71,4 +71,119 @@ The first business of Alibaba Group, Alibaba.com (www.alibaba.com) is the leadin
     ];
     is_deeply($links, $expected_links, "Links from Alexa are correct");
     
+    # Sanook.com
+    $html = '<table cellpadding="0" cellspacing="0" id="category_link_table" class="table  ">
+<thead>
+<tr>
+<th style="" class="text-left header">Categories with Related Sites</th>
+</tr>
+</thead>
+<tbody>
+<tr data-count="1" class=" ">
+<td class=""><span class=""><a href="/topsites/category/World/">World</a> <span class="text-gt">&gt;</span> <a href="/topsites/category/World/Thai/">Thai</a> <span class="text-gt">&gt;</span> <a href="/topsites/category/World/Thai/%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E%E0%B8%B4%E0%B8%A7%E0%B9%80%E0%B8%95%E0%B8%AD%E0%B8%A3%E0%B9%8C/">คอมพิวเตอร์</a> <span class="text-gt">&gt;</span> <a href="/topsites/category/World/Thai/%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E%E0%B8%B4%E0%B8%A7%E0%B9%80%E0%B8%95%E0%B8%AD%E0%B8%A3%E0%B9%8C/%E0%B8%AD%E0%B8%B4%E0%B8%99%E0%B9%80%E0%B8%97%E0%B8%AD%E0%B8%A3%E0%B9%8C%E0%B9%80%E0%B8%99%E0%B9%87%E0%B8%95/">อินเทอร์เน็ต</a> <span class="text-gt">&gt;</span> <a href="/topsites/category/World/Thai/%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E%E0%B8%B4%E0%B8%A7%E0%B9%80%E0%B8%95%E0%B8%AD%E0%B8%A3%E0%B9%8C/%E0%B8%AD%E0%B8%B4%E0%B8%99%E0%B9%80%E0%B8%97%E0%B8%AD%E0%B8%A3%E0%B9%8C%E0%B9%80%E0%B8%99%E0%B9%87%E0%B8%95/%E0%B8%9A%E0%B8%99%E0%B9%80%E0%B8%A7%E0%B9%87%E0%B8%9A/">บนเว็บ</a> <span class="text-gt">&gt;</span> <a href="/topsites/category/World/Thai/%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E%E0%B8%B4%E0%B8%A7%E0%B9%80%E0%B8%95%E0%B8%AD%E0%B8%A3%E0%B9%8C/%E0%B8%AD%E0%B8%B4%E0%B8%99%E0%B9%80%E0%B8%97%E0%B8%AD%E0%B8%A3%E0%B9%8C%E0%B9%80%E0%B8%99%E0%B9%87%E0%B8%95/%E0%B8%9A%E0%B8%99%E0%B9%80%E0%B8%A7%E0%B9%87%E0%B8%9A/%E0%B9%80%E0%B8%A7%E0%B9%87%E0%B8%9A%E0%B8%97%E0%B9%88%E0%B8%B2/">เว็บท่า</a></span></td>                    </tr>
+</tbody>
+</table>';
+
+    $html .= '<section id="contact-panel-content" class="panel-content">
+<div class="row-fluid siteinfo-site-summary">
+<span style="margin-bottom: 25px;">
+<!-- No logo markup-->
+<a href="#" data-dialog="add-logo" class="logo" title="Add logo">&nbsp;</a>
+<div class="" style="margin-left: 85px;">
+<p style="margin:10px 0px 2px;">สนุกดอทคอม</p>
+</div>
+</span>
+</div><br>
+<div class="row-fluid">
+<span class="span8">
+<h3 class="h6">
+<span class="metrics-title">Site Description</span>
+</h3>
+<p class="color-s3">หนึ่งในเว็บท่าที่มีผู้เข้าชมสูงสุดของไทย</p>
+<p><a href="http://web.archive.org/web/*/http://sanook.com" rel="nofollow">How did sanook.com look in the past?</a></p>
+</span>
+<span class="span4">
+<h3 class="h6">
+<span class="metrics-title">Contact</span>
+</h3>
+<div class="color-s3">MWEB (Thailand) Ltd<br>2/4 Samaggi Insurance Tower, 9th Floor<br>Thungsonghong, Laksi, Bangkok 10210&nbsp;<br>THAILAND<div class="contact-email">admin [at] ns.ksc.co.th</div><br></div>
+</span>
+</div>
+<div class="row-fluid text-right">
+<a data-dialog="editsite-dialog" data-site="sanook.com" class="contactus-edit btn-link" href="#">
+<span class="btn btn-small btn-p1">Edit Site Info</span></a>
+</div>
+<div id="edit-listing-dialog" class="hide-elem">
+<p>To edit your site\'s public information you need to verify ownership of your site.</p>
+<div class="btns-wrapper">
+<a class="btns btn btn-small btn-p1" href="/login?resource=%2Fpro%2Flisting%2Fredirectedit%3Fsite%3Dsanook.com">Sign In</a>
+<a class="btns btn btn-small btn-p2" href="/register?resource=%2Fpro%2Flisting%2Fredirectedit%3Fsite%3Dsanook.com">Create an Account</a>
+</div>
+</div>
+<div id="add-logo-dialog" class="hide-elem">
+<p>Customize your site overview page with your logo, plus add links back to your site
+and much more! An Enhanced Site Overview is just one of the features you get with
+an <strong>Alexa PRO</strong> subscription.</p>
+<div class="btns-wrapper">
+<a href="/plans?ax_atid=cfe7e5c2-7a18-42bd-b8a5-56d49ea14022&amp;site=sanook.com" class="btn btn-small btn-p1">View Plans and Pricing</a>
+</div>
+</div>
+</section>';
+    
+    my $page_detail = $chk_lang->extract_page_detail($html, "www.test.com.th");
+    my $expected_result = {
+            url => 'www.test.com.th',
+            title => 'สนุกดอทคอม',
+            description => 'หนึ่งในเว็บท่าที่มีผู้เข้าชมสูงสุดของไทย',
+            category_full => 'World,Thai,คอมพิวเตอร์,อินเทอร์เน็ต,บนเว็บ,เว็บท่า',
+            category_main => 'Thai',
+            language => 'th',
+        };
+    is_deeply($page_detail, $expected_result, "Extract page detail correctly");
+    
+    my @cat_names = (
+        'World',
+        'Vietnamese',
+        'Địa phương',
+        'Châu Á',
+        'Việt Nam',
+        'Kinh tế và Doanh nghiệp',
+        'Mua sắm'
+    );
+    $expected_result = 'Vietnamese';
+    my $result = $chk_lang->_extract_main_category(\@cat_names);
+    is($result, $expected_result, "Main category of local site is correct");
+    
+    @cat_names = (
+        'Computers',
+        'Internet',
+        'On the Web',
+        'Web Portals'
+    );
+    $expected_result = 'Computers-Web Portals';
+    $result = $chk_lang->_extract_main_category(\@cat_names);
+    is($result, $expected_result, "Main category of global site is correct");
+    
+    my $data =  {
+        category_main => 'Vietnamese',
+    };
+    is($chk_lang->_identify_lang($data), "vn", "Language is correct");
+    
+    # Still fail to identify Thai
+    # $data =  {
+    #     category_main => 'xxx',
+    #     description => 'หนึ่งในเว็บท่าที่มีผู้เข้าชมสูงสุดของไทย'
+    # };
+    # is($chk_lang->_identify_lang($data), "th", "Language is correct");
+    
+    $data =  {
+        url => 'www.google.co.sg',
+    };
+    is($chk_lang->_identify_lang($data), "en", "Language is correct");
+    
+    $data =  {
+        url => 'www.google.co.ph',
+    };
+    is($chk_lang->_identify_lang($data), "en", "Language is correct");
+    
 };

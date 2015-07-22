@@ -4,14 +4,23 @@ use Moose;
 use check::site::agent;
 use Storable;
 use HTML::HeadParser;
+use Mojo::DOM;
 use Lingua::Identify qw(:language_identification);
+use utf8;
 
 use Data::Dumper;
 
-has country_codes => (
+has 'country_codes' => (
     is => 'ro', 
     isa => 'ArrayRef', 
     builder => '_build_country_codes',
+    lazy => 1,
+);
+
+has 'category_to_language' => (
+    is => 'ro', 
+    isa => 'HashRef', 
+    builder => '_build_category_to_language',
     lazy => 1,
 );
 
@@ -43,19 +52,21 @@ sub _build_country_codes {
     
 }
 
+sub _build_category_to_language {
+    
+    return {
+        Thai => 'th', # Thailand
+        'Bahasa Indonesia' => 'id', # Indonesia
+        Vietnamese => 'vn', # Vietnam
+    };
+    
+}
+
 sub export_sites_detail {
     my ( $self, $top_sites_detail, $file_name ) = @_;
     
     $file_name = $file_name || 'top_sites_detail.csv';
     my $site_count = scalar keys $top_sites_detail;
-    
-    # my @country_codes = (
-    #     'TH', # Thailand
-    #     'ID', # Indonesia
-    #     'PH', # Philippines
-    #     'SG', # Singapore
-    #     'VN', # Vietnam
-    # );
     
     my @headers = (
         "site",
@@ -88,12 +99,12 @@ sub export_sites_detail {
         push(@strings, $site->{description} || '');
         
         # language
-        my $lang;
-        if ( defined($site->{keywords}) || defined($site->{description}) ) {
-            $lang = langof($site->{keywords} . " " . $site->{description});
-            # print "----- ", Dumper($lang), "\n";
-        }
-        push(@strings, $lang || '');
+        # my $lang;
+        # if ( defined($site->{keywords}) || defined($site->{description}) ) {
+        #     $lang = langof($site->{keywords} . " " . $site->{description});
+        #     # print "----- ", Dumper($lang), "\n";
+        # }
+        # push(@strings, $lang || '');
         
         # error
         if ( $site->{error} ) {
@@ -142,7 +153,7 @@ sub save_top_sites_detail {
         
         $top_sites_detail->{$link} = $link_rank->{$link};
         
-        my $url = $self->_link_name_to_url($link);
+        my $url = $self->_link_name_to_alexa_info($link);
         my $result = $self->ua->get($url);
         
         print "$i / $site_count Read: $url = ", $result->{status}, "\n"; 
@@ -152,7 +163,8 @@ sub save_top_sites_detail {
         }
         
         # extract detail
-        my $details = $self->extract_page_detail($result->{content});
+        my $details = $self->extract_page_detail($result->{content}, $link);
+        # print "detail ---- ", Dumper($details); exit;
         
         foreach (keys %$details) {
             $top_sites_detail->{$link}->{$_} = $details->{$_};
@@ -160,8 +172,9 @@ sub save_top_sites_detail {
         
         # save to file
         store $top_sites_detail, $file_name;
+        # print "detail ---- ", Dumper($details); exit;
         
-        # last if ($i > 30);
+        # last if ($i >= 1144);
     }
     
     # print Dumper($top_sites_detail);
@@ -171,39 +184,148 @@ sub save_top_sites_detail {
 }
 
 sub extract_page_detail {
-    my ( $self, $html ) = @_;
+    my ( $self, $html, $url ) = @_;
     
-    my $p = HTML::HeadParser->new;
-    $p->parse($html);
+    # my $p = HTML::HeadParser->new;
+    # $p->parse($html);
+    # 
+    # if ($p) {
+    #     return {
+    #         title => $p->header('Title') || '',
+    #         keywords => $p->header('X-Meta-Keywords') || '',
+    #         description => $p->header('X-Meta-Description') || '',
+    #     };
+    # } else {
+    #     return {};
+    # }
     
-    if ($p) {
-        return {
-            title => $p->header('Title') || '',
-            keywords => $p->header('X-Meta-Keywords') || '',
-            description => $p->header('X-Meta-Description') || '',
-        };
-    } else {
-        return {};
+    my $dom = Mojo::DOM->new;
+    $dom->parse($html);
+    my $summary_title_text = undef;
+    my $summary_desc_text = undef;
+    
+    my $summary_title = $dom->at('#contact-panel-content div.row-fluid.siteinfo-site-summary p');
+    if ($summary_title) {
+        $summary_title_text = $summary_title->text;
     }
+    # print "   - title: ", $summary_title_text, " \n";
+    
+    my $summary_desc = $dom->at('#contact-panel-content p.color-s3');
+    
+    if ($summary_desc) {
+        $summary_desc_text = ($summary_desc->text eq 'A description has not been provided for this site.') ? "" : $summary_desc->text;
+    }
+    # print "   - desc: ", $summary_desc_text, " \n";
+    
+    my $category_full = $dom->at('#category_link_table tr[data-count=1]');
+    
+    my $cat_names_full = undef;
+    my $main_cat = undef;
+    if ($category_full) {
+        my @cats = $category_full->find('a')->each;
+        my @cat_names = map {$_->text} @cats;
+        $cat_names_full = join(',', @cat_names);
+        # print "   - cat full: ", Dumper(\@cat_names)," \n";
+        
+        $main_cat = $self->_extract_main_category(\@cat_names);
+        # print "   - cat main: ", $main_cat," \n";
+    }
+    my $detail = {
+        url => $url,
+        title => $summary_title_text || '',
+        description => $summary_desc_text || '',
+        category_full => $cat_names_full || '',
+        category_main => $main_cat || '',
+    };
+    
+    my $lang = $self->_identify_lang($detail);
+    $detail->{language} = $lang || "";
+    # print "   - lang: ", $lang," \n";
+    
+    # try to get description from site
+    if ($detail->{'description'} eq '') {
+        # print "    --- Try: $url \n";
+        $detail = $self->_fetch_site_last_try($detail, $url);
+    }
+    
+    # my $p = HTML::HeadParser->new;
+    # $p->parse($html);
+    # 
+    # if ($p) {
+    #     return {
+    #         title => $p->header('Title') || '',
+    #         keywords => $p->header('X-Meta-Keywords') || '',
+    #         description => $p->header('X-Meta-Description') || '',
+    #     };
+    # } else {
+    #     return {};
+    # }
+    
+    return $detail
+}
 
+sub _fetch_site_last_try {
+    my ( $self, $detail, $link ) = @_;
+    
+    my $url = $self->_link_name_to_url($link);
+    print "    --- Read: $url = ";
+    my $result = $self->ua->get($url);
+    # my $result->{status} = 0;
+    print $result->{status}, "\n"; 
+    
+    if ($result->{status}) {
+        
+        my $p = HTML::HeadParser->new;
+        $p->parse($result->{content});
+        
+        if ($p) {
+            $detail->{description} = $p->header('X-Meta-Description') || '';
+        }
+        
+        return $detail;
+    }
+    
+    return $detail;
+}
+
+sub _extract_main_category {
+    my ( $self, $cat_names ) = @_;
+    
+    my $main_cat = undef;
+    
+    # check if local site (start with World)
+    if ($cat_names->[0] eq 'World' && defined($cat_names->[1]) ) {
+        $main_cat = $cat_names->[1];
+    } elsif (defined($cat_names->[0])) {
+        $main_cat = join('-',$cat_names->[0],$cat_names->[-1]);
+    }
+    
+    return $main_cat || "";
 }
 
 sub _link_name_to_url {
     my ( $self, $link ) = @_;
     
-    $link = "www." . $link unless ( $link =~ /^www\./ );
+    $link = "http://www." . $link unless ( $link =~ /^www\./ );
+    return $link
+}
+
+sub _link_name_to_alexa_info {
+    my ( $self, $link ) = @_;
+    
+    $link = "http://www.alexa.com/siteinfo/" . $link unless ( $link =~ /^http/ );
     return $link
 }
 
 sub save_top_sites_by_country {
-    my ( $self, $country_codes, $max_page, $file_name ) = @_;
+    my ( $self, $max_page, $file_name ) = @_;
     
     $max_page = $max_page || 3;
     $file_name = $file_name || 'top_sites_by_country.hash';
     my $link_rank = {};
     
     # by country
-    foreach my $country_code (@$country_codes) {
+    foreach my $country_code (@{$self->country_codes}) {
         # by page
         for (my $page=1; $page <= $max_page; $page++) {
             my $url = $self->_get_alexa_url($page, $country_code);
@@ -270,25 +392,46 @@ sub _build_ua {
     return check::site::agent->new();
 }
 
-sub _cleanup_lang {
+sub _identify_lang {
     my ($self, $data) = @_;
     
-    foreach my $link (keys %$data) {
-        # get suffix
-        my ($suffix) = $link =~ /\.([^.]\w+)$/;
-
+    # 1) category
+    # 2) detect from title + description
+    # 3) from url suffix
+    
+    my $lang = undef;
+    
+    # 1
+    if (defined($data->{category_main}) && 
+        defined($self->category_to_language->{$data->{category_main}})) 
+    {
+        $lang = $self->category_to_language->{$data->{category_main}};
+    }
+    
+    # 2
+    if (!defined($lang) && defined($data->{description}) ) {
+        $lang = langof($data->{description});
         
-        print "--- $link ==> $suffix \n";
+        # my %xxx = langof($data->{description});
+        # print "++++++" , $data->{description}, Dumper(%xxx);
+    }
+    
+    # 3
+    if (!defined($lang)) {
+        my ($suffix) = $data->{url} =~ /\.([^.]\w+)$/;
+        # print "--- ",$data->{url}," ==> $suffix \n";
         
-        # $string =~ m/(interesting)/g;
-        
-        my @lang_match = grep(/^$suffix$/i, @{$self->country_codes});
-        $data->{$link}->{language} = $suffix if (scalar @lang_match > 0);
-        
+        # assume site from PH and SG use English
+        if ($suffix eq 'ph' || $suffix eq 'sg') {
+            $lang = 'en';
+        } else {
+            my @lang_match = grep(/^$suffix$/i, @{$self->country_codes});
+            $lang = $suffix if (scalar @lang_match > 0);
+        }
         
     }
     
-    return $data;
+    return $lang || "";
 }
 
 

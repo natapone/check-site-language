@@ -66,7 +66,8 @@ sub _build_curl {
     my $self = shift;
     
     return WWW::Curl::Simple->new(
-                        timeout => $self->timeout,
+                        # timeout => $self->timeout,
+                        connection_timeout => $self->timeout,
                     );
 }
 
